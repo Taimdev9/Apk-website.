@@ -1,0 +1,8 @@
+node_modules/
+template/
+builds/
+uploads/
+*.apk
+.env
+.DS_Store
+npm-debug.log*
