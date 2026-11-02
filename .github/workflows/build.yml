@@ -27,20 +27,20 @@ jobs:
     - name: Install Cordova
       run: npm install -g cordova
 
+    - name: Install ImageMagick
+      run: sudo apt-get update && sudo apt-get install -y imagemagick
+
     - name: Create Cordova Project & Copy Files
       run: |
         cordova create myapp com.example.app "MyApp"
         
-        # مسح الملفات الافتراضية ونسخ ملفاتك
         rm -rf myapp/www/*
         cp -r app_source/* myapp/www/ || true
         
-        # تأكد من وجود ملف index.html
         if [ ! -f myapp/www/index.html ]; then
           echo "<h1>Hello World</h1>" > myapp/www/index.html
         fi
         
-        # تغيير اسم التطبيق إذا كان الملف موجود
         if [ -f app_source/name.txt ]; then
           APP_NAME=$(cat app_source/name.txt)
           sed -i "s/<name>.*<\/name>/<name>$APP_NAME<\/name>/" myapp/config.xml
@@ -48,6 +48,25 @@ jobs:
         
         cd myapp
         cordova platform add android
+        
+        if [ -f ../app_source/icon.png ]; then
+          echo "تم العثور على صورة، جاري معالجتها..."
+          if convert ../app_source/icon.png -resize 192x192 /tmp/test_icon.png 2>/dev/null; then
+            echo "الصورة سليمة، جاري تغيير الحجم..."
+            for size in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+              folder=$(echo $size | cut -d: -f1)
+              px=$(echo $size | cut -d: -f2)
+              convert ../app_source/icon.png -resize ${px}x${px} platforms/android/app/src/main/res/mipmap-$folder/ic_launcher.png
+              if [ -f platforms/android/app/src/main/res/mipmap-$folder/ic_launcher_round.png ]; then
+                cp platforms/android/app/src/main/res/mipmap-$folder/ic_launcher.png platforms/android/app/src/main/res/mipmap-$folder/ic_launcher_round.png
+              fi
+            done
+          else
+            echo "⚠️ الصورة تالفة أو ليست PNG أصلية! سيتم استخدام الأيقونة الافتراضية."
+          fi
+        else
+          echo "لم يتم العثور على صورة، سيتم استخدام الأيقونة الافتراضية."
+        fi
 
     - name: Build APK
       run: |
