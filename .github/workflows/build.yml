@@ -1,7 +1,7 @@
 name: Build Android APK
 
 on:
-  workflow_dispatch: # هذا الخيار بيخليك تشغل البناء بضغطة زر
+  workflow_dispatch:
   push:
     branches: [ "main" ] 
 
@@ -27,20 +27,22 @@ jobs:
     - name: Install Cordova
       run: npm install -g cordova
 
+    # --- هذا هو السطر الجديد اللي بيحل المشكلة ---
+    - name: Install ImageMagick
+      run: sudo apt-get update && sudo apt-get install -y imagemagick
+    # --------------------------------------------
+
     - name: Create Cordova Project & Copy Files
       run: |
         cordova create myapp com.example.app "MyApp"
         
-        # مسح الملفات الافتراضية ونسخ ملفاتك
         rm -rf myapp/www/*
         cp -r app_source/* myapp/www/ || true
         
-        # تأكد من وجود ملف index.html
         if [ ! -f myapp/www/index.html ]; then
           echo "<h1>Hello World</h1>" > myapp/www/index.html
         fi
         
-        # تغيير اسم التطبيق إذا كان الملف موجود
         if [ -f app_source/name.txt ]; then
           APP_NAME=$(cat app_source/name.txt)
           sed -i "s/<name>.*<\/name>/<name>$APP_NAME<\/name>/" myapp/config.xml
@@ -49,7 +51,6 @@ jobs:
         cd myapp
         cordova platform add android
         
-        # تغيير الأيقونة إذا كانت الصورة موجودة
         if [ -f ../app_source/icon.png ]; then
           for size in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
             folder=$(echo $size | cut -d: -f1)
