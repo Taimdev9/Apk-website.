@@ -1,426 +1,1013 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>لعبة السيارات - سباق الزرقاء</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none; /* منع تحديد النصوص */
-        }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🔥 نار بلوكس — Fire Blocks</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            background-color: #111;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            touch-action: none; /* منع تحريك الشاشة أثناء اللعب */
-        }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #120404;
+    font-family: 'Tahoma', 'Segoe UI', Arial, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+  }
 
-        canvas {
-            background-color: #2c3e50; /* لون الشارع */
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            display: block;
-        }
+  #game { position: fixed; inset: 0; }
+  canvas { display: block; }
 
-        #ui {
-            position: absolute;
-            top: 20px;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 20px;
-            pointer-events: none; /* ليتمكن اللاعب من اللعب عبر الواجهة */
-        }
+  /* ===== HUD ===== */
+  #hud {
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+    z-index: 20;
+  }
 
-        #score {
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-        }
+  #robuxBox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 26px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(60,10,0,.92), rgba(25,3,0,.92));
+    border: 2px solid #ff6a00;
+    box-shadow: 0 0 22px rgba(255,90,0,.65), inset 0 0 20px rgba(255,90,0,.25);
+    font-size: 22px;
+    color: #ffe0b0;
+    letter-spacing: .5px;
+    white-space: nowrap;
+  }
+  #robuxBox b {
+    color: #ffb300;
+    font-size: 27px;
+    text-shadow: 0 0 14px #ff7700, 0 0 30px #ff4400;
+  }
 
-        #game-over {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            display: none;
-            z-index: 10;
-        }
+  #playerTag {
+    padding: 6px 20px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.55);
+    border: 1px solid rgba(255,120,0,.55);
+    color: #ffd9a0;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  #playerTag b { color: #ff9d00; }
 
-        #game-over h1 {
-            font-size: 40px;
-            margin-bottom: 10px;
-            color: #ff4757;
-        }
+  /* ===== أزرار ===== */
+  #shopBtn {
+    position: fixed;
+    bottom: 22px;
+    right: 22px;
+    z-index: 25;
+    padding: 15px 30px;
+    font-size: 19px;
+    font-weight: bold;
+    font-family: inherit;
+    color: #fff;
+    cursor: pointer;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ff8a00, #d63c00);
+    box-shadow: 0 6px 0 #7a1d00, 0 0 26px rgba(255,110,0,.7);
+    transition: transform .12s, box-shadow .12s;
+  }
+  #shopBtn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #7a1d00, 0 0 34px rgba(255,140,0,.9); }
+  #shopBtn:active { transform: translateY(4px); box-shadow: 0 2px 0 #7a1d00, 0 0 20px rgba(255,110,0,.7); }
 
-        #game-over p {
-            font-size: 20px;
-            margin-bottom: 20px;
-        }
+  #hint {
+    position: fixed;
+    bottom: 26px;
+    left: 22px;
+    z-index: 20;
+    padding: 10px 18px;
+    border-radius: 12px;
+    background: rgba(0,0,0,.55);
+    border: 1px solid rgba(255,120,0,.35);
+    color: #ffc890;
+    font-size: 14px;
+    line-height: 1.9;
+    pointer-events: none;
+    max-width: 260px;
+  }
+  #hint kbd {
+    background: #3a1200;
+    border: 1px solid #ff6a00;
+    border-radius: 5px;
+    padding: 1px 7px;
+    color: #ffb060;
+    font-family: inherit;
+    font-size: 13px;
+  }
 
-        #restart-btn {
-            padding: 15px 30px;
-            font-size: 20px;
-            background-color: #1e90ff;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            pointer-events: auto;
-        }
-        
-        #restart-btn:active {
-            transform: scale(0.95);
-        }
-    </style>
+  /* ===== السوق ===== */
+  #shop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.72);
+    backdrop-filter: blur(5px);
+  }
+  #shop.open { display: flex; }
+
+  .shop-panel {
+    width: min(760px, 94vw);
+    max-height: 86vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 22px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #240a02, #150402);
+    border: 2px solid #ff6a00;
+    box-shadow: 0 0 60px rgba(255,90,0,.55);
+    animation: pop .22s ease-out;
+  }
+  @keyframes pop {
+    from { transform: scale(.9); opacity: 0; }
+    to   { transform: scale(1);  opacity: 1; }
+  }
+
+  .shop-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px;
+    background: linear-gradient(90deg, #ff6a00, #b32700);
+    color: #fff;
+  }
+  .shop-head h2 { font-size: 22px; letter-spacing: .5px; }
+
+  #closeShop {
+    background: rgba(0,0,0,.35);
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .15s;
+  }
+  #closeShop:hover { background: rgba(0,0,0,.6); }
+
+  .shop-balance {
+    padding: 12px 22px;
+    font-size: 17px;
+    color: #ffd9a0;
+    background: rgba(255,110,0,.12);
+    border-bottom: 1px solid rgba(255,110,0,.25);
+  }
+  .shop-balance span { color: #ffb300; font-weight: bold; font-size: 20px; }
+
+  .items {
+    padding: 18px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+  }
+  .items::-webkit-scrollbar { width: 10px; }
+  .items::-webkit-scrollbar-track { background: #1a0600; }
+  .items::-webkit-scrollbar-thumb { background: #ff6a00; border-radius: 10px; }
+
+  .item {
+    padding: 16px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #2c0d03, #1a0501);
+    border: 1.5px solid rgba(255,110,0,.4);
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    transition: border-color .15s, transform .15s;
+  }
+  .item:hover { border-color: #ff8a00; transform: translateY(-3px); }
+  .item .name { font-size: 17px; color: #ffb060; font-weight: bold; }
+  .item .desc { font-size: 13.5px; color: #c99a78; line-height: 1.6; min-height: 42px; }
+
+  .item button {
+    margin-top: 4px;
+    padding: 10px;
+    border: none;
+    border-radius: 11px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #fff;
+    background: linear-gradient(180deg, #ff8a00, #cc3b00);
+    box-shadow: 0 4px 0 #6b1800;
+    transition: transform .1s, box-shadow .1s, filter .15s;
+  }
+  .item button:hover { filter: brightness(1.15); }
+  .item button:active { transform: translateY(3px); box-shadow: 0 1px 0 #6b1800; }
+
+  .item button.owned {
+    background: linear-gradient(180deg, #2e7d32, #1b5e20);
+    box-shadow: 0 4px 0 #10330f;
+    cursor: default;
+    filter: none;
+  }
+  .item button.poor {
+    background: linear-gradient(180deg, #4a4a4a, #2c2c2c);
+    box-shadow: 0 4px 0 #1a1a1a;
+    cursor: not-allowed;
+    filter: none;
+  }
+
+  /* ===== توست ===== */
+  #toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(.85);
+    z-index: 90;
+    padding: 16px 34px;
+    border-radius: 16px;
+    background: rgba(20,4,0,.95);
+    border: 2px solid #ff8a00;
+    color: #ffd9a0;
+    font-size: 20px;
+    font-weight: bold;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s, transform .25s;
+    box-shadow: 0 0 40px rgba(255,110,0,.7);
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+  /* ===== شاشة البداية ===== */
+  #startScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 26px;
+    background: radial-gradient(circle at 50% 45%, #3a0b00 0%, #0d0200 70%);
+    color: #ffd9a0;
+    text-align: center;
+    cursor: pointer;
+    transition: opacity .4s;
+  }
+  #startScreen.hide { opacity: 0; pointer-events: none; }
+
+  #startScreen h1 {
+    font-size: clamp(34px, 7vw, 68px);
+    color: #ff7a00;
+    text-shadow: 0 0 24px #ff4400, 0 0 60px #ff2200, 0 0 100px #ff0000;
+    letter-spacing: 2px;
+    animation: flicker 2.2s infinite;
+  }
+  @keyframes flicker {
+    0%,100% { opacity: 1; }
+    48% { opacity: .92; }
+    50% { opacity: .72; }
+    52% { opacity: .95; }
+  }
+
+  #startScreen p { font-size: 18px; line-height: 2.1; color: #c99a78; }
+  #startScreen .big { font-size: 26px; color: #ffb300; font-weight: bold; }
+
+  .play-btn {
+    padding: 18px 60px;
+    font-size: 24px;
+    font-weight: bold;
+    font-family: inherit;
+    border: none;
+    border-radius: 18px;
+    cursor: pointer;
+    color: #fff;
+    background: linear-gradient(180deg, #ff8a00, #c73000);
+    box-shadow: 0 8px 0 #6b1800, 0 0 50px rgba(255,110,0,.8);
+    animation: pulse 1.8s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+</style>
 </head>
 <body>
 
-    <div id="ui">
-        <div id="score">النقاط: 0</div>
+<div id="game"></div>
+
+<!-- ============ HUD ============ -->
+<div id="hud">
+  <div id="robuxBox">
+    💰 معاك <b id="robuxAmount">1,000,000</b> روبوكس
+  </div>
+  <div id="playerTag">🔥 <b>نار بلوكس</b> — السكن الناري</div>
+</div>
+
+<div id="hint">
+  <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> للحركة<br>
+  <kbd>Space</kbd> للنط<br>
+  <kbd>حرّك الماوس</kbd> للكاميرا<br>
+  اجمع الصناديق الذهبية = +10,000 روبوكس
+</div>
+
+<button id="shopBtn">🛒 السوق</button>
+
+<!-- ============ السوق ============ -->
+<div id="shop">
+  <div class="shop-panel">
+    <div class="shop-head">
+      <h2>🛒 السوق الناري</h2>
+      <button id="closeShop">✖</button>
     </div>
+    <div class="shop-balance">💰 رصيدك: <span id="shopRobux">1,000,000</span> روبوكس</div>
+    <div class="items" id="items"></div>
+  </div>
+</div>
 
-    <div id="game-over">
-        <h1>تحطمت!</h1>
-        <p>نقاطك: <span id="final-score">0</span></p>
-        <button id="restart-btn">العب مرة أخرى</button>
-    </div>
+<div id="toast"></div>
 
-    <canvas id="gameCanvas"></canvas>
+<!-- ============ شاشة البداية ============ -->
+<div id="startScreen">
+  <h1>🔥 نار بلوكس 🔥</h1>
+  <p>
+    السكن الناري هذا حار جداً… لا تلمسه! 🥵<br>
+    عندك <span class="big">1,000,000 روبوكس</span> تصرفها في السوق
+  </p>
+  <button class="play-btn">▶ ابدأ اللعب</button>
+</div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreElement = document.getElementById('score');
-        const gameOverScreen = document.getElementById('game-over');
-        const finalScoreElement = document.getElementById('final-score');
-        const restartBtn = document.getElementById('restart-btn');
+<!-- ============ Three.js ============ -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
 
-        let canvasWidth, canvasHeight;
-        let gameSpeed = 5;
-        let score = 0;
-        let gameActive = false;
-        let animationId;
-        let roadLines = [];
-        let obstacles = [];
-        let spawnTimer = 0;
+<script type="module">
+import * as THREE from 'three';
 
-        // إعدادات السيارة (اللاعب)
-        const player = {
-            x: 0,
-            y: 0,
-            width: 60,
-            height: 110,
-            targetX: 0
-        };
+/* =========================================================
+   1) الحالة العامة
+   ========================================================= */
+const state = {
+  robux: 1000000,
+  speed: 9,
+  jumpPower: 13.5,
+  magnet: false,
+  fireBlue: false,
+  goldSkin: false,
+  owned: {}
+};
 
-        // دالة تعديل حجم الشاشة لتناسب الجوال والايباد
-        function resizeCanvas() {
-            canvasWidth = window.innerWidth;
-            canvasHeight = window.innerHeight;
-            
-            // تحديد أقصى عرض للشاشة لتبدو اللعبة جيدة على الايباد
-            if (canvasWidth > 600) {
-                canvasWidth = 600;
-            }
-            
-            canvas.width = canvasWidth;
-            canvas.height = canvasHeight;
+const SHOP_ITEMS = [
+  { id: 'speed',  name: '👟 جزمة السرعة',   desc: 'تزيد سرعة الجري بنسبة +60%.',              price: 200000 },
+  { id: 'jump',   name: '🦘 نابض القفز',    desc: 'تزيد قوة النط بنسبة +50%.',                price: 250000 },
+  { id: 'blue',   name: '💙 لهب أزرق',       desc: 'يغيّر لون لهبك إلى أزرق ناري.',            price: 300000 },
+  { id: 'magnet', name: '🧲 مغناطيس النقاط', desc: 'يجذب الصناديق الذهبية من مسافة بعيدة.',    price: 150000 },
+  { id: 'crown',  name: '👑 تاج الملك',      desc: 'تاج ذهبي فوق رأسك.',                       price: 400000 },
+  { id: 'gold',   name: '💎 سكن ذهبي',       desc: 'جسمك يصير ذهبي لامع كامل.',                price: 500000 }
+];
 
-            // إعادة تعيين موقع السيارة
-            if (!gameActive) {
-                player.x = canvasWidth / 2 - player.width / 2;
-                player.y = canvasHeight - player.height - 50;
-                player.targetX = player.x;
-            }
-        }
+/* =========================================================
+   2) إعداد المشهد
+   ========================================================= */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x120404);
+scene.fog = new THREE.Fog(0x120404, 45, 150);
 
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+const camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, 600);
 
-        // إنشاء خطوط الشارع
-        function initRoadLines() {
-            roadLines = [];
-            for (let i = 0; i < canvasHeight; i += 80) {
-                roadLines.push({ y: i });
-            }
-        }
-        initRoadLines();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.getElementById('game').appendChild(renderer.domElement);
 
-        // رسم سيارة اللاعب (مشابهة للصورة)
-        function drawPlayerCar() {
-            const x = player.x;
-            const y = player.y;
-            const w = player.width;
-            const h = player.height;
+/* --- الإضاءة --- */
+scene.add(new THREE.AmbientLight(0xff5522, 0.4));
+scene.add(new THREE.HemisphereLight(0xff5522, 0x1a0000, 0.55));
 
-            ctx.save();
-            
-            // جسم السيارة (أزرق)
-            ctx.fillStyle = '#1c3df2'; // نفس لون الصورة تقريباً
-            ctx.beginPath();
-            ctx.roundRect(x, y, w, h, 15);
-            ctx.fill();
+const sun = new THREE.DirectionalLight(0xffaa66, 1.15);
+sun.position.set(25, 45, 18);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -45;
+sun.shadow.camera.right = 45;
+sun.shadow.camera.top = 45;
+sun.shadow.camera.bottom = -45;
+sun.shadow.camera.far = 150;
+scene.add(sun);
 
-            // الخط الأبيض في المنتصف
-            ctx.fillStyle = 'white';
-            ctx.fillRect(x + w/2 - 6, y + 5, 12, h - 10);
+/* =========================================================
+   3) الأرضية والبيئة
+   ========================================================= */
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(400, 400),
+  new THREE.MeshStandardMaterial({ color: 0x1a0a07, roughness: 0.95, metalness: 0.1 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
 
-            // الزجاج الأمامي والخلفي (أسود)
-            ctx.fillStyle = '#000';
-            // الزجاج الأمامي
-            ctx.beginPath();
-            ctx.roundRect(x + 10, y + 15, w - 20, 25, 5);
-            ctx.fill();
-            // الزجاج الخلفي
-            ctx.beginPath();
-            ctx.roundRect(x + 10, y + h - 40, w - 20, 25, 5);
-            ctx.fill();
+const grid = new THREE.GridHelper(220, 110, 0xff5500, 0x552200);
+grid.position.y = 0.02;
+grid.material.transparent = true;
+grid.material.opacity = 0.35;
+scene.add(grid);
 
-            // النوافذ الجانبية
-            ctx.beginPath();
-            ctx.roundRect(x + 2, y + 45, 8, 25, 3);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.roundRect(x + w - 10, y + 45, 8, 25, 3);
-            ctx.fill();
+/* --- منصات --- */
+const platforms = [
+  { x:   9, z:  -7, w: 7, d: 7, h: 1.2 },
+  { x: -10, z:   5, w: 6, d: 6, h: 2.2 },
+  { x:   0, z: -16, w: 9, d: 9, h: 3.4 },
+  { x:  15, z:  11, w: 5, d: 5, h: 1.6 },
+  { x: -16, z: -12, w: 6, d: 6, h: 2.8 }
+];
 
-            // المرايا الجانبية (أزرق فاتح)
-            ctx.fillStyle = '#00a8ff';
-            ctx.beginPath();
-            ctx.ellipse(x - 5, y + 40, 8, 4, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(x + w + 5, y + 40, 8, 4, 0, 0, Math.PI * 2);
-            ctx.fill();
+const platMat = new THREE.MeshStandardMaterial({
+  color: 0x2a0d05, roughness: 0.85, metalness: 0.2,
+  emissive: 0x551500, emissiveIntensity: 0.6
+});
+const platTopMat = new THREE.MeshStandardMaterial({
+  color: 0x3a1206, emissive: 0xff5500, emissiveIntensity: 1.1, roughness: 0.5
+});
 
-            // الكفرات (أسود)
-            ctx.fillStyle = '#111';
-            ctx.fillRect(x - 2, y + 20, 6, 20);
-            ctx.fillRect(x + w - 4, y + 20, 6, 20);
-            ctx.fillRect(x - 2, y + h - 40, 6, 20);
-            ctx.fillRect(x + w - 4, y + h - 40, 6, 20);
+for (const p of platforms) {
+  const body = new THREE.Mesh(new THREE.BoxGeometry(p.w, p.h, p.d), platMat);
+  body.position.set(p.x, p.h / 2, p.z);
+  body.castShadow = true;
+  body.receiveShadow = true;
+  scene.add(body);
 
-            ctx.restore();
-        }
+  const top = new THREE.Mesh(new THREE.BoxGeometry(p.w + 0.06, 0.12, p.d + 0.06), platTopMat);
+  top.position.set(p.x, p.h + 0.05, p.z);
+  scene.add(top);
+}
 
-        // رسم سيارة العدو (حمراء)
-        function drawEnemyCar(obs) {
-            ctx.save();
-            // جسم السيارة
-            ctx.fillStyle = '#ff4757';
-            ctx.beginPath();
-            ctx.roundRect(obs.x, obs.y, obs.width, obs.height, 10);
-            ctx.fill();
+/* =========================================================
+   4) اللاعب (الشخصية النارية)
+   ========================================================= */
+const playerGroup = new THREE.Group();
+scene.add(playerGroup);
 
-            // الزجاج
-            ctx.fillStyle = '#222';
-            ctx.beginPath();
-            ctx.roundRect(obs.x + 5, obs.y + 15, obs.width - 10, 20, 5);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.roundRect(obs.x + 5, obs.y + obs.height - 35, obs.width - 10, 20, 5);
-            ctx.fill();
+const bodyMat = new THREE.MeshStandardMaterial({
+  color: 0x2a0800,
+  emissive: 0xff4400,
+  emissiveIntensity: 1.0,
+  roughness: 0.45,
+  metalness: 0.3
+});
 
-            // خطوط الكفرات
-            ctx.fillStyle = '#000';
-            ctx.fillRect(obs.x - 2, obs.y + 10, 4, 15);
-            ctx.fillRect(obs.x + obs.width - 2, obs.y + 10, 4, 15);
-            ctx.fillRect(obs.x - 2, obs.y + obs.height - 25, 4, 15);
-            ctx.fillRect(obs.x + obs.width - 2, obs.y + obs.height - 25, 4, 15);
-            ctx.restore();
-        }
+const eyeMat = new THREE.MeshStandardMaterial({
+  color: 0x000000, emissive: 0xffee00, emissiveIntensity: 3, roughness: 0.2
+});
 
-        // إنشاء عوائق جديدة
-        function spawnObstacle() {
-            const width = 60;
-            const height = 110;
-            // اختيار مسار عشوائي (يمين، وسط، يسار)
-            const lanes = [canvasWidth * 0.15, canvasWidth * 0.5 - width/2, canvasWidth * 0.85 - width];
-            const x = lanes[Math.floor(Math.random() * lanes.length)];
+function block(w, h, d, x, y, z, mat = bodyMat) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  playerGroup.add(m);
+  return m;
+}
 
-            obstacles.push({
-                x: x,
-                y: -height - 50,
-                width: width,
-                height: height,
-                speed: gameSpeed + Math.random() * 2
-            });
-        }
+/* الجسم */
+block(1.0, 1.2, 0.55, 0, 1.75, 0);          // الجذع
+block(0.75, 0.75, 0.75, 0, 2.72, 0);        // الرأس
+block(0.15, 0.15, 0.06, -0.18, 2.78, 0.38, eyeMat); // عين
+block(0.15, 0.15, 0.06,  0.18, 2.78, 0.38, eyeMat); // عين
 
-        // التحقق من التصادم
-        function checkCollision(rect1, rect2) {
-            return (
-                rect1.x < rect2.x + rect2.width &&
-                rect1.x + rect1.width > rect2.x &&
-                rect1.y < rect2.y + rect2.height &&
-                rect1.y + rect1.height > rect2.y
-            );
-        }
+/* الأطراف — محور الدوران من الأعلى */
+function limb(w, h, d, x, y) {
+  const g = new THREE.BoxGeometry(w, h, d);
+  g.translate(0, -h / 2, 0);
+  const m = new THREE.Mesh(g, bodyMat);
+  m.position.set(x, y, 0);
+  m.castShadow = true;
+  playerGroup.add(m);
+  return m;
+}
+const armL = limb(0.32, 1.05, 0.32, -0.66, 2.30);
+const armR = limb(0.32, 1.05, 0.32,  0.66, 2.30);
+const legL = limb(0.38, 1.10, 0.38, -0.24, 1.15);
+const legR = limb(0.38, 1.10, 0.38,  0.24, 1.15);
 
-        // تحديث اللعبة
-        function update() {
-            if (!gameActive) return;
+/* التاج (مخفي بالأول) */
+const crown = new THREE.Group();
+crown.position.set(0, 3.08, 0);
+const goldMat = new THREE.MeshStandardMaterial({
+  color: 0xffcc00, emissive: 0xffaa00, emissiveIntensity: 1.4, metalness: 1, roughness: 0.2
+});
+const crownBase = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.40, 0.16, 10), goldMat);
+crown.add(crownBase);
+for (let i = 0; i < 6; i++) {
+  const a = (i / 6) * Math.PI * 2;
+  const spike = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.26, 4), goldMat);
+  spike.position.set(Math.cos(a) * 0.33, 0.20, Math.sin(a) * 0.33);
+  crown.add(spike);
+}
+crown.visible = false;
+playerGroup.add(crown);
 
-            // تحريك السيارة بنعومة نحو الهدف
-            player.x += (player.targetX - player.x) * 0.2;
-            
-            // منع السيارة من الخروج عن الشارع
-            if (player.x < 10) player.x = 10;
-            if (player.x + player.width > canvasWidth - 10) player.x = canvasWidth - player.width - 10;
+/* اسم اللاعب فوق الرأس */
+function makeLabel(text) {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 128;
+  const ctx = c.getContext('2d');
+  ctx.font = 'bold 62px Tahoma, Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
 
-            // تحريك خطوط الشارع
-            for (let line of roadLines) {
-                line.y += gameSpeed;
-                if (line.y > canvasHeight) {
-                    line.y = -80;
-                }
-            }
+  const tw = ctx.measureText(text).width + 70;
+  const x = (512 - tw) / 2;
 
-            // إنشاء عوائق جديدة
-            spawnTimer++;
-            if (spawnTimer > 60 - (score / 50)) { // زيادة الصعوبة مع الوقت
-                spawnObstacle();
-                spawnTimer = 0;
-            }
+  const rr = (px, py, pw, ph, r) => {
+    ctx.beginPath();
+    ctx.moveTo(px + r, py);
+    ctx.arcTo(px + pw, py, px + pw, py + ph, r);
+    ctx.arcTo(px + pw, py + ph, px, py + ph, r);
+    ctx.arcTo(px, py + ph, px, py, r);
+    ctx.arcTo(px, py, px + pw, py, r);
+    ctx.closePath();
+  };
 
-            // تحديث العوائق والتحقق من التصادم
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                let obs = obstacles[i];
-                obs.y += obs.speed;
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  rr(x, 22, tw, 84, 24); ctx.fill();
+  ctx.strokeStyle = '#ff7700';
+  ctx.lineWidth = 5;
+  rr(x, 22, tw, 84, 24); ctx.stroke();
 
-                // التصادم
-                if (checkCollision(player, obs)) {
-                    endGame();
-                    return;
-                }
+  ctx.fillStyle = '#ffddaa';
+  ctx.fillText(text, 256, 66);
 
-                // إزالة العوائق التي خرجت من الشاشة
-                if (obs.y > canvasHeight) {
-                    obstacles.splice(i, 1);
-                    score += 10;
-                    scoreElement.innerText = `النقاط: ${score}`;
-                }
-            }
-        }
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 4;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+  sp.scale.set(4.2, 1.05, 1);
+  return sp;
+}
+const nameTag = makeLabel('🔥 نار بلوكس');
+nameTag.position.set(0, 4.05, 0);
+playerGroup.add(nameTag);
 
-        // رسم كل شيء على الشاشة
-        function draw() {
-            // مسح الشاشة
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+/* ضوء اللهب على اللاعب */
+const fireLight = new THREE.PointLight(0xff5500, 5, 18, 2);
+fireLight.position.set(0, 1.8, 0);
+playerGroup.add(fireLight);
 
-            // رسم أرضية الشارع
-            ctx.fillStyle = '#2c3e50';
-            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+/* =========================================================
+   5) نظام جزيئات النار
+   ========================================================= */
+const P_COUNT = 520;
+const pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(P_COUNT * 3);
+const pCol = new Float32Array(P_COUNT * 3);
+const pVel = new Float32Array(P_COUNT * 3);
+const pLife = new Float32Array(P_COUNT);
+const pMax = new Float32Array(P_COUNT);
 
-            // رسم خطوط الشارع
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            for (let line of roadLines) {
-                ctx.fillRect(canvasWidth / 2 - 5, line.y, 10, 40);
-            }
+function circleTexture() {
+  const s = 64;
+  const c = document.createElement('canvas');
+  c.width = c.height = s;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.35, 'rgba(255,255,255,0.65)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, s, s);
+  return new THREE.CanvasTexture(c);
+}
 
-            // رسم الحواف الجانبية (أبيض وأسود)
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(5, 0, 10, canvasHeight);
-            ctx.fillRect(canvasWidth - 15, 0, 10, canvasHeight);
-            
-            // رسم العوائق
-            for (let obs of obstacles) {
-                drawEnemyCar(obs);
-            }
+const pMat = new THREE.PointsMaterial({
+  size: 0.34,
+  map: circleTexture(),
+  vertexColors: true,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  sizeAttenuation: true
+});
 
-            // رسم سيارة اللاعب
-            drawPlayerCar();
-        }
+const particles = new THREE.Points(pGeo, pMat);
+particles.frustumCulled = false;
+scene.add(particles);
 
-        // حلقة اللعبة الأساسية
-        function gameLoop() {
-            update();
-            draw();
-            animationId = requestAnimationFrame(gameLoop);
-        }
+const playerPos = new THREE.Vector3(0, 0, 0);
 
-        // بدء اللعبة
-        function startGame() {
-            gameActive = true;
-            score = 0;
-            gameSpeed = 7;
-            obstacles = [];
-            spawnTimer = 0;
-            scoreElement.innerText = `النقاط: ${score}`;
-            gameOverScreen.style.display = 'none';
-            
-            player.x = canvasWidth / 2 - player.width / 2;
-            player.targetX = player.x;
-            
-            initRoadLines();
-            cancelAnimationFrame(animationId);
-            gameLoop();
-        }
+function spawnParticle(i, initial) {
+  const a = Math.random() * Math.PI * 2;
+  const r = Math.random() * 0.7;
+  pPos[i * 3]     = playerPos.x + Math.cos(a) * r;
+  pPos[i * 3 + 1] = playerPos.y + 0.25 + Math.random() * (initial ? 3.0 : 1.3);
+  pPos[i * 3 + 2] = playerPos.z + Math.sin(a) * r;
 
-        // إنهاء اللعبة
-        function endGame() {
-            gameActive = false;
-            finalScoreElement.innerText = score;
-            gameOverScreen.style.display = 'flex';
-            cancelAnimationFrame(animationId);
-        }
+  pVel[i * 3]     = (Math.random() - 0.5) * 0.9;
+  pVel[i * 3 + 1] = 1.9 + Math.random() * 2.4;
+  pVel[i * 3 + 2] = (Math.random() - 0.5) * 0.9;
 
-        // التحكم عبر اللمس (للهواتف والايباد)
-        canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault(); // منع السكرول
-            if (!gameActive) return;
-            const rect = canvas.getBoundingClientRect();
-            const touchX = e.touches[0].clientX - rect.left;
-            player.targetX = touchX - player.width / 2;
-        }, { passive: false });
+  pMax[i] = 0.55 + Math.random() * 1.0;
+  pLife[i] = initial ? Math.random() * pMax[i] : pMax[i];
+}
 
-        canvas.addEventListener('touchstart', (e) => {
-            if (!gameActive) return;
-            const rect = canvas.getBoundingClientRect();
-            const touchX = e.touches[0].clientX - rect.left;
-            player.targetX = touchX - player.width / 2;
-        });
+for (let i = 0; i < P_COUNT; i++) spawnParticle(i, true);
 
-        // التحكم عبر الماوس (للكمبيوتر)
-        canvas.addEventListener('mousemove', (e) => {
-            if (!gameActive) return;
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            player.targetX = mouseX - player.width / 2;
-        });
+const fireColorNormal = new THREE.Color(0xff6a00);
+const fireColorBlue = new THREE.Color(0x33aaff);
+const tmpColor = new THREE.Color();
 
-        // أزرار الكيبورد للكمبيوتر
-        window.addEventListener('keydown', (e) => {
-            if (!gameActive) return;
-            if (e.key === 'ArrowLeft' || e.key === 'a') player.targetX -= 30;
-            if (e.key === 'ArrowRight' || e.key === 'd') player.targetX += 30;
-        });
+/* =========================================================
+   6) العملات الذهبية
+   ========================================================= */
+const coinGeo = new THREE.BoxGeometry(0.65, 0.65, 0.65);
+const coinMat = new THREE.MeshStandardMaterial({
+  color: 0xffcc00, emissive: 0xffaa00, emissiveIntensity: 1.5, metalness: 1, roughness: 0.15
+});
 
-        // زر إعادة اللعب
-        restartBtn.addEventListener('click', startGame);
+const coins = [];
+function randomCoinSpot() {
+  const onPlatform = Math.random() < 0.4;
+  if (onPlatform) {
+    const p = platforms[Math.floor(Math.random() * platforms.length)];
+    return new THREE.Vector3(
+      p.x + (Math.random() - 0.5) * (p.w - 2),
+      p.h + 1.2,
+      p.z + (Math.random() - 0.5) * (p.d - 2)
+    );
+  }
+  return new THREE.Vector3((Math.random() - 0.5) * 60, 1.2, (Math.random() - 0.5) * 60);
+}
 
-        // بدء اللعبة أول مرة
-        startGame();
+for (let i = 0; i < 10; i++) {
+  const m = new THREE.Mesh(coinGeo, coinMat);
+  m.position.copy(randomCoinSpot());
+  m.castShadow = true;
+  scene.add(m);
+  coins.push({ mesh: m, phase: Math.random() * Math.PI * 2 });
+}
 
-    </script>
+/* =========================================================
+   7) حركة اللاعب والكاميرا
+   ========================================================= */
+const keys = Object.create(null);
+const velocityY = { v: 0 };
+let onGround = true;
+let yaw = 0;
+let pitch = 0.35;
+let facing = 0;
+let walkCycle = 0;
+let shopOpen = false;
+let gameStarted = false;
+
+const CLAMP = (v, a, b) => Math.min(b, Math.max(a, v));
+
+addEventListener('keydown', (e) => {
+  keys[e.code] = true;
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+});
+addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+/* قفل الماوس للكاميرا */
+renderer.domElement.addEventListener('click', () => {
+  if (!shopOpen && gameStarted) renderer.domElement.requestPointerLock();
+});
+
+addEventListener('mousemove', (e) => {
+  if (document.pointerLockElement !== renderer.domElement) return;
+  yaw -= e.movementX * 0.0026;
+  pitch = CLAMP(pitch - e.movementY * 0.0020, -0.15, 1.05);
+});
+
+/* ارتفاع الأرض تحت اللاعب */
+function groundHeightAt(x, z, prevY) {
+  let h = 0;
+  for (const p of platforms) {
+    if (Math.abs(x - p.x) <= p.w / 2 + 0.35 && Math.abs(z - p.z) <= p.d / 2 + 0.35) {
+      if (prevY >= p.h - 0.2) h = Math.max(h, p.h);
+    }
+  }
+  return h;
+}
+
+/* =========================================================
+   8) واجهة السوق
+   ========================================================= */
+const shopEl = document.getElementById('shop');
+const itemsEl = document.getElementById('items');
+const toastEl = document.getElementById('toast');
+let toastTimer = null;
+
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1700);
+}
+
+function updateHUD() {
+  const txt = state.robux.toLocaleString('en-US');
+  document.getElementById('robuxAmount').textContent = txt;
+  document.getElementById('shopRobux').textContent = txt;
+}
+
+function renderShop() {
+  itemsEl.innerHTML = '';
+  for (const item of SHOP_ITEMS) {
+    const owned = !!state.owned[item.id];
+    const poor = !owned && state.robux < item.price;
+
+    const card = document.createElement('div');
+    card.className = 'item';
+    card.innerHTML = `
+      <div class="name">${item.name}</div>
+      <div class="desc">${item.desc}</div>
+      <button class="${owned ? 'owned' : poor ? 'poor' : ''}" data-id="${item.id}">
+        ${owned ? '✅ تم الشراء' : poor ? '❌ روبوكس غير كافي' : `شراء — ${item.price.toLocaleString('en-US')} 💰`}
+      </button>
+    `;
+    itemsEl.appendChild(card);
+  }
+
+  itemsEl.querySelectorAll('button[data-id]').forEach((btn) => {
+    btn.addEventListener('click', () => buy(btn.dataset.id));
+  });
+}
+
+function buy(id) {
+  const item = SHOP_ITEMS.find((i) => i.id === id);
+  if (!item || state.owned[id]) return;
+
+  if (state.robux < item.price) {
+    toast('😅 ما عندك روبوكس كافي!');
+    return;
+  }
+
+  state.robux -= item.price;
+  state.owned[id] = true;
+  applyItem(id);
+
+  updateHUD();
+  renderShop();
+  toast('✅ تم شراء: ' + item.name);
+}
+
+function applyItem(id) {
+  switch (id) {
+    case 'speed':
+      state.speed *= 1.6;
+      break;
+    case 'jump':
+      state.jumpPower *= 1.5;
+      break;
+    case 'blue':
+      state.fireBlue = true;
+      if (!state.goldSkin) {
+        bodyMat.emissive.setHex(0x0066ff);
+      }
+      fireLight.color.setHex(0x3399ff);
+      break;
+    case 'magnet':
+      state.magnet = true;
+      break;
+    case 'crown':
+      crown.visible = true;
+      break;
+    case 'gold':
+      state.goldSkin = true;
+      bodyMat.color.setHex(0xffcc00);
+      bodyMat.emissive.setHex(0xffaa00);
+      bodyMat.emissiveIntensity = 1.5;
+      bodyMat.metalness = 1.0;
+      bodyMat.roughness = 0.15;
+      break;
+  }
+}
+
+document.getElementById('shopBtn').addEventListener('click', () => {
+  shopOpen = true;
+  shopEl.classList.add('open');
+  renderShop();
+  document.exitPointerLock?.();
+});
+
+document.getElementById('closeShop').addEventListener('click', () => {
+  shopOpen = false;
+  shopEl.classList.remove('open');
+});
+
+shopEl.addEventListener('click', (e) => {
+  if (e.target === shopEl) {
+    shopOpen = false;
+    shopEl.classList.remove('open');
+  }
+});
+
+/* =========================================================
+   9) شاشة البداية
+   ========================================================= */
+const startScreen = document.getElementById('startScreen');
+function startGame() {
+  if (gameStarted) return;
+  gameStarted = true;
+  startScreen.classList.add('hide');
+  renderer.domElement.requestPointerLock?.();
+}
+startScreen.addEventListener('click', startGame);
+
+/* =========================================================
+   10) حلقة اللعبة
+   ========================================================= */
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+
+  /* ---------- الإدخال ---------- */
+  let w = 0, d = 0;
+  if (!shopOpen && gameStarted) {
+    if (keys['KeyW'] || keys['ArrowUp'])    w += 1;
+    if (keys['KeyS'] || keys['ArrowDown'])  w -= 1;
+    if (keys['KeyD'] || keys['ArrowRight']) d += 1;
+    if (keys['KeyA'] || keys['ArrowLeft'])  d -= 1;
+  }
+
+  const inLen = Math.hypot(w, d);
+  if (inLen > 0) { w /= inLen; d /= inLen; }
+
+  const sinY = Math.sin(yaw), cosY = Math.cos(yaw);
+
+  // الاتجاه الأمامي للكاميرا (أفقي) = (-sin, -cos)
+  // الاتجاه اليمين = (cos, -sin)
+  const moveX = -sinY * w + cosY * d;
+  const moveZ = -cosY * w - sinY * d;
+
+  /* ---------- الحركة الأفقية ---------- */
+  if (inLen > 0) {
+    playerPos.x += moveX * state.speed * dt;
+    playerPos.z += moveZ * state.speed * dt;
+
+    const targetFacing = Math.atan2(moveX, moveZ);
+    let diff = targetFacing - facing;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    facing += diff * Math.min(1, dt * 14);
+
+    walkCycle += dt * 12;
+  } else {
+    walkCycle += dt * 3;
+  }
+
+  // حدود العالم
+  playerPos.x = CLAMP(playerPos.x, -95, 95);
+  playerPos.z = CLAMP(playerPos.z, -95, 95);
+
+  /* ---------- الجاذبية والقفز ---------- */
+  const prevY = playerPos.y;
+
+  if (!shopOpen && gameStarted && keys['Space'] && onGround) {
+    velocityY.v = state.jumpPower;
+    onGround = false;
+  }
+
+  velocityY.v -= 32 * dt;
+  playerPos.y += velocityY.v * dt;
+
+  const gh = groundHeightAt(playerPos.x, playerPos.z, prevY);
+  if (playerPos.y <= gh && velocityY.v <= 0) {
+    playerPos.y = gh;
+    velocityY.v = 0;
+    onGround = true;
+  } else {
+    onGround = false;
+  }
+
+  /* ---------- تحديث مجسم اللاعب ---------- */
+  playerGroup.position.copy(playerPos);
+  playerGroup.rotation.y = facing;
+
+  // أنيميشن المشي
+  const swing = Math.sin(walkCycle) * (inLen > 0 ? 0.85 : 0.12);
+  legL.rotation.x = swing;
+  legR.rotation.x = -swing;
+  armL.rotation.x = -swing * 0.85;
+  armR.rotation.x = swing * 0.85;
+
+  // ارتداد خفيف أثناء الطيران
+  if (!onGround) {
+    armL.rotation.x = -0.9;
+    armR.rotation.x = -0.9;
+    legL.rotation.x = 0.4;
+    legR.rotation.x = -0.3;
+  }
+
+  // نبض ضوء النار
+  fireLight.intensity = 4.5 + Math.sin(t * 9) * 1.2;
+
+  /* ---------- الجزيئات ---------- */
+  const baseColor = state.fireBlue ? fireColorBlue : fireColorNormal;
+
+  for (let i = 0; i < P_COUNT; i++) {
+    pLife[i] -= dt;
+
+    if (pLife[i] <= 0) spawnParticle(i, false);
+
+    pPos[i * 3]     += pVel[i * 3] * dt;
+    pPos[i * 3 + 1] += pVel[i * 3 + 1] * dt;
+    pPos[i * 3 + 2] += pVel[i * 3 + 2] * dt;
+
+    pVel[i * 3 + 1] += 1.6 * dt;             // يطلع لفوق أسرع
+    pVel[i * 3]     *= 1 - dt * 1.5;
+    pVel[i * 3 + 2] *= 1 - dt * 1.5;
+
+    const lifeT = Math.max(0, pLife[i] / pMax[i]);
+
+    tmpColor.copy(baseColor).multiplyScalar(lifeT * lifeT);
+    pCol[i * 3]     = tmpColor.r;
+    pCol[i * 3 + 1] = tmpColor.g;
+    pCol[i * 3 + 2] = tmpColor.b;
+  }
+
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
+  pGeo.attributes.position.needsUpdate = true;
+  pGeo.attributes.color.needsUpdate = true;
+
+  /* ---------- العملات ---------- */
+  for (const c of coins) {
+    c.mesh.rotation.y += dt * 2.2;
+    c.mesh.rotation.x += dt * 0.8;
+    c.mesh.position.y += Math.sin(t * 2.2 + c.phase) * 0.004;
+
+    const dx = c.mesh.position.x - playerPos.x;
+    const dy = c.mesh.position.y - (playerPos.y + 1.6);
+    const dz = c.mesh.position.z - playerPos.z;
+    const dist = Math.hypot(dx, dy, dz);
+
+    // مغناطيس
+    if (state.magnet && dist < 8 && dist > 1.1) {
+      const pull = 9 * dt / dist;
+      c.mesh.position.x -= dx * pull;
+      c.mesh.position.y -= dy * pull;
+      c.mesh.position.z -= dz * pull;
+    }
+
+    if (dist < 1.6) {
+      c.mesh.position.copy(randomCoinSpot());
+      state.robux += 10000;
+      updateHUD();
+      if (shopOpen) renderShop();
+      toast('💰 +10,000 روبوكس!');
+    }
+  }
+
+  /* ---------- الكاميرا ---------- */
+  const dist = 9.5;
+  const cp = Math.cos(pitch), sp = Math.sin(pitch);
+
+  camera.position.set(
+    playerPos.x + Math.sin(yaw) * cp * dist,
+    playerPos.y + 2.2 + sp * dist,
+    playerPos.z + Math.cos(yaw) * cp * dist
+  );
+  camera.lookAt(playerPos.x, playerPos.y + 2.1, playerPos.z);
+
+  // الكاميرا ما تنزل تحت الأرض
+  if (camera.position.y < 0.9) camera.position.y = 0.9;
+
+  renderer.render(scene, camera);
+}
+
+/* =========================================================
+   11) تشغيل
+   ========================================================= */
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+updateHUD();
+renderShop();
+animate();
+</script>
 </body>
 </html>
